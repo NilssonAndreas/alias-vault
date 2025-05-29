@@ -5,9 +5,17 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"runtime"
 
 	"github.com/spf13/cobra"
 )
+
+func getShellCommand(cmd string) *exec.Cmd {
+	if runtime.GOOS == "windows" {
+		return exec.Command("cmd", "/C", cmd)
+	}
+	return exec.Command("sh", "-c", cmd)
+}
 
 var runCmd = &cobra.Command{
 	Use:   "run <alias>",
@@ -22,15 +30,13 @@ var runCmd = &cobra.Command{
 		}
 
 		fmt.Println("Run:", entry.Command)
-		parts := []string{"cmd", "/C", entry.Command}
-		if execCmd := exec.Command(parts[0], parts[1:]...); execCmd != nil {
-			execCmd.Stdout = os.Stdout
-			execCmd.Stderr = os.Stderr
-			execCmd.Stdin = os.Stdin
-			err := execCmd.Run()
-			if err != nil {
-				fmt.Println("Error:", err)
-			}
+		execCmd := getShellCommand(entry.Command)
+		execCmd.Stdout = os.Stdout
+		execCmd.Stderr = os.Stderr
+		execCmd.Stdin = os.Stdin
+
+		if err := execCmd.Run(); err != nil {
+			fmt.Println("Error:", err)
 		}
 	},
 }

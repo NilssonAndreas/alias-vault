@@ -3,6 +3,8 @@ package vault
 import (
 	"database/sql"
 	"encoding/json"
+	"os"
+	"path/filepath"
 	"time"
 
 	_ "modernc.org/sqlite"
@@ -17,9 +19,13 @@ type Alias struct {
 
 var db *sql.DB
 
+func getDbPath() string {
+	homeDir, _ := os.UserHomeDir()
+	return filepath.Join(homeDir, ".aliasvault.db")
+}
 func init() {
 	var err error
-	db, err = sql.Open("sqlite", "vault.db")
+	db, err = sql.Open("sqlite", getDbPath())
 	if err != nil {
 		panic(err)
 	}

@@ -4,7 +4,6 @@ import (
 	"aliasvault/vault"
 	"fmt"
 	"os"
-	"os/exec"
 	"strings"
 
 	"github.com/gdamore/tcell/v2"
@@ -72,23 +71,23 @@ var tuiCmd = &cobra.Command{
 		refreshData()
 
 		table.SetSelectedFunc(func(row, column int) {
-			if row == 0 || row > len(fullAliases) {
-				return
+if row == 0 || row > len(fullAliases) {
+	return
+}
+		cmdStr := table.GetCell(row, 1).Text
+		app.Suspend(func() {
+			fmt.Println("Running:", cmdStr)
+			c := getShellCommand(cmdStr)
+			c.Stdout = os.Stdout
+			c.Stderr = os.Stderr
+			c.Stdin = os.Stdin
+			err := c.Run()
+			if err != nil {
+				fmt.Println("Error executing command:", err)
 			}
-			cmdStr := table.GetCell(row, 1).Text
-			app.Suspend(func() {
-				fmt.Println("Running:", cmdStr)
-				c := exec.Command("cmd", "/C", cmdStr)
-				c.Stdout = os.Stdout
-				c.Stderr = os.Stderr
-				c.Stdin = os.Stdin
-				err := c.Run()
-				if err != nil {
-					fmt.Println("Error executing command:", err)
-				}
-				fmt.Print("Press Enter to return...")
-				fmt.Scanln()
-			})
+			fmt.Print("Press Enter to return...")
+			fmt.Scanln()
+		})
 		})
 
 		table.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
