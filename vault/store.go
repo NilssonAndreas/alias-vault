@@ -45,7 +45,13 @@ func SaveAlias(alias, command string, tags []string) error {
 		return err
 	}
 
-	_, err = db.Exec(`INSERT INTO aliases (alias, command, tags, created_at) VALUES (?, ?, ?, ?)`,
-		alias, command, string(tagsJson), time.Now())
+	_, err = db.Exec(`
+		INSERT INTO aliases (alias, command, tags, created_at)
+		VALUES (?, ?, ?, ?)
+		ON CONFLICT(alias) DO UPDATE SET
+			command = excluded.command,
+			tags = excluded.tags
+	`, alias, command, string(tagsJson), time.Now())
+
 	return err
 }

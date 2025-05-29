@@ -21,7 +21,7 @@ var tuiCmd = &cobra.Command{
 		app := tview.NewApplication()
 		table := tview.NewTable().SetBorders(false).SetSelectable(true, false)
 		searchInput := tview.NewInputField().SetLabel("Search: ").SetFieldWidth(50)
-		footerText := tview.NewTextView().SetText("[Enter] Run   [a] Add   [d] Delete   [/] Search   [q] Quit").SetTextColor(tcell.ColorGray)
+		footerText := tview.NewTextView().SetText("[Enter] Run   [a] Add   [e] Edit   [d] Delete   [/] Search   [q] Quit").SetTextColor(tcell.ColorGray)
 
 		layout := tview.NewFlex().SetDirection(tview.FlexRow).
 			AddItem(table, 0, 1, true).
@@ -77,7 +77,7 @@ var tuiCmd = &cobra.Command{
 			}
 			cmdStr := table.GetCell(row, 1).Text
 			app.Suspend(func() {
-				fmt.Println("▶️  Running:", cmdStr)
+				fmt.Println("Running:", cmdStr)
 				c := exec.Command("cmd", "/C", cmdStr)
 				c.Stdout = os.Stdout
 				c.Stderr = os.Stderr
@@ -122,6 +122,38 @@ var tuiCmd = &cobra.Command{
 				form.SetBorder(true).SetTitle("Add New Alias").SetTitleAlign(tview.AlignLeft)
 				form.SetFocus(0)
 				app.SetRoot(form, true).SetFocus(form)
+			case 'e':
+				row, _ := table.GetSelection()
+				if row > 0 && row <= len(visibleAliases) {
+					a := visibleAliases[row-1]
+
+					var command, tags string
+
+					form := tview.NewForm()
+					form.AddInputField("Command", a.Command, 50, nil, func(val string) { command = val })
+					form.AddInputField("Tags (comma separated)", strings.Join(a.Tags, ", "), 50, nil, func(val string) { tags = val })
+
+					form.AddButton("Save", func() {
+						tagList := strings.Split(tags, ",")
+						for i := range tagList {
+							tagList[i] = strings.TrimSpace(tagList[i])
+						}
+						err := vault.SaveAlias(a.Alias, command, tagList)
+						if err != nil {
+							fmt.Println("Error saving alias:", err)
+						}
+						refreshData()
+						app.SetRoot(layout, true).SetFocus(table)
+					})
+					form.AddButton("Cancel", func() {
+						app.SetRoot(layout, true).SetFocus(table)
+					})
+
+					form.SetBorder(true).SetTitle(fmt.Sprintf("Edit Alias: %s", a.Alias)).SetTitleAlign(tview.AlignLeft)
+					form.SetFocus(0)
+					app.SetRoot(form, true).SetFocus(form)
+				}
+
 			case '/':
 				searchMode = true
 				app.SetFocus(searchInput)
