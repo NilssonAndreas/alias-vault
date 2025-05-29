@@ -12,7 +12,6 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var fullAliases []vault.Alias
 var visibleAliases []vault.Alias
 
 var tuiCmd = &cobra.Command{
@@ -85,7 +84,7 @@ var tuiCmd = &cobra.Command{
 				c.Stdin = os.Stdin
 				err := c.Run()
 				if err != nil {
-					fmt.Println("❌ Error executing command:", err)
+					fmt.Println("Error executing command:", err)
 				}
 				fmt.Print("Press Enter to return...")
 				fmt.Scanln()
